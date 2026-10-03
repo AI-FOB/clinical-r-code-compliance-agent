@@ -1,0 +1,10 @@
+{
+  "rule_id": "COMP-003",
+  "rule_name": "Prohibit set.seed() in Analysis Functions",
+  "description": "Setting random seeds inside analysis functions or scripts outside of designated global initialization can lead to un-reproducible or artificially reproducible results.",
+  "severity": "MEDIUM",
+  "patterns": [
+    "set\\.seed\\(.*\\)"
+  ],
+  "recommendation": "Remove set.seed() from individual analysis functions. Define seeds globally in the main execution script."
+}

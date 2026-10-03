@@ -1,0 +1,11 @@
+{
+  "rule_id": "COMP-001",
+  "rule_name": "No Hard-Coded Treatment Values",
+  "description": "Hard-coding treatment assignments (e.g., TRT == 'ACTIVE') is prohibited in analysis scripts. Use treatment codes mapped from randomization tables.",
+  "severity": "HIGH",
+  "patterns": [
+    "TRT[\\s]*==[\\s]*['\"]ACTIVE['\"]",
+    "TRT[\\s]*==[\\s]*['\"]PLACEBO['\"]"
+  ],
+  "recommendation": "Use dynamic mappings or parameters for treatment conditions instead of hard-coded string values."
+}

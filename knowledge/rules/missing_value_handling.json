@@ -1,0 +1,10 @@
+{
+  "rule_id": "COMP-002",
+  "rule_name": "Prohibit na.omit on Analysis Datasets",
+  "description": "Using na.omit() directly on analysis datasets can lead to unintended case deletions. Missing values must be handled explicitly through imputation or specified model parameters.",
+  "severity": "MEDIUM",
+  "patterns": [
+    "na\\.omit\\(.*\\)"
+  ],
+  "recommendation": "Use explicit missing value handling (e.g., tidyr::drop_na on specific columns) or appropriate imputation methods."
+}

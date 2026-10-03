@@ -1,0 +1,10 @@
+{
+  "rule_id": "COMP-005",
+  "rule_name": "Use Native R Pipe",
+  "description": "The use of magrittr pipe (%>%) is deprecated in favor of the native R pipe (|>).",
+  "severity": "LOW",
+  "patterns": [
+    "%>%"
+  ],
+  "recommendation": "Replace %>% with |>"
+}

@@ -1,0 +1,11 @@
+{
+  "rule_id": "COMP-006",
+  "rule_name": "Require Explicit Namespaces for Common Functions",
+  "description": "Common non-base functions like mutate or select should be prefixed with their package namespace (e.g., dplyr::mutate) to avoid conflicts.",
+  "severity": "MEDIUM",
+  "patterns": [
+    "(?<![\\w:])mutate\\s*\\(",
+    "(?<![\\w:])select\\s*\\("
+  ],
+  "recommendation": "Prefix the function call with its package namespace, e.g., dplyr::mutate() or dplyr::select()."
+}

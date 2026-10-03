@@ -1,0 +1,16 @@
+{
+  "rule_id": "COMP-004",
+  "rule_name": "Required Documentation Header Keywords",
+  "description": "Scripts must contain a documentation header with specific keywords: Purpose, Inputs, Outputs, Assumptions, Usage Note, and Parameter.",
+  "severity": "HIGH",
+  "rule_type": "file_level_presence",
+  "required_keywords": [
+    "Purpose",
+    "Inputs",
+    "Outputs",
+    "Assumptions",
+    "Usage Note",
+    "Parameter"
+  ],
+  "recommendation": "Add a comment block at the top of the file containing all required documentation keywords."
+}
