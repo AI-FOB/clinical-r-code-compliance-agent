@@ -17,3 +17,7 @@ Thumbs.db
 
 # Secrets
 .env
+
+# Local vector store (rebuilt from knowledge/rules/)
+.chroma/
+chroma_db/

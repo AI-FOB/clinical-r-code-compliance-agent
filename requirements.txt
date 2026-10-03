@@ -1,7 +1,11 @@
 pydantic>=2.0
 pandas>=2.0
 numpy>=1.24
-langchain>=0.2.0
-langchain-openai>=0.1.0
+langchain>=1.0
+langchain-openai>=1.0
 openai>=1.0.0
-chromadb>=0.4.0
+chromadb>=0.5.0
+# v0.2 RAG: local, self-contained embeddings (no API keys required)
+sentence-transformers>=3.0.0
+langchain-huggingface>=0.1.0
+pytest>=7.0
