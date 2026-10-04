@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import sys
 import os
 
@@ -24,21 +25,46 @@ def run_deterministic(filepath, rules_dir):
     return 1
 
 
-def run_agent(filepath, rules_dir, model, temperature, top_k):
+async def run_agent_async(filepath, rules_dir, model, temperature, top_k, max_concurrency):
     # Imported lazily so the deterministic path does not load torch/ChromaDB/Ollama.
+    from tqdm import tqdm
     from src.compliance_agent.agent import ComplianceAgent
 
-    print(f"Running LLM agent workflow (model={model}, temperature={temperature}, top_k={top_k})...\n")
-    agent = ComplianceAgent(rules_dir=rules_dir, model=model, temperature=temperature, top_k=top_k)
-    findings = agent.analyze(filepath)
+    print(
+        f"Running LLM agent workflow (model={model}, temperature={temperature}, "
+        f"top_k={top_k}, max_concurrency={max_concurrency})...\n"
+    )
+    agent = ComplianceAgent(
+        rules_dir=rules_dir,
+        model=model,
+        temperature=temperature,
+        top_k=top_k,
+        max_concurrency=max_concurrency,
+    )
+
+    bar = None
+
+    def on_progress(completed, total):
+        nonlocal bar
+        if bar is None and total:
+            bar = tqdm(total=total, desc="Reviewing flagged lines", unit="flag", file=sys.stderr)
+        if bar is not None:
+            bar.n = completed
+            bar.refresh()
+
+    try:
+        findings = await agent.aanalyze(filepath, progress_callback=on_progress)
+    finally:
+        if bar is not None:
+            bar.close()
 
     if not findings:
         print(f"Analyzed {filepath}: No compliance issues found.")
         return 0
 
-    print(f"Analyzed {filepath}: Found {len(findings)} compliance issue(s):\n")
+    print(f"\nAnalyzed {filepath}: Found {len(findings)} compliance issue(s):\n")
     for f in findings:
-        print(f"[{f.severity}] {f.rule_id} (confidence {f.confidence:.2f})")
+        print(f"[{f.severity}] {f.rule_id} at line {f.line_number} (confidence {f.confidence:.2f})")
         print(f"  Finding: {f.finding}")
         print(f"  Evidence: {f.evidence}")
         print(f"  Recommendation: {f.recommendation}\n")
@@ -53,6 +79,7 @@ def main():
     parser.add_argument("--model", default="gemma4:e4b", help="Ollama model tag used with --use-llm (default: gemma4:e4b).")
     parser.add_argument("--temperature", type=float, default=1.0, help="LLM sampling temperature used with --use-llm (default: 1.0).")
     parser.add_argument("--top-k", type=int, default=3, help="Number of rules retrieved per flagged snippet with --use-llm (default: 3).")
+    parser.add_argument("--max-concurrency", type=int, default=4, help="Maximum concurrent LLM requests with --use-llm (default: 4).")
 
     args = parser.parse_args()
 
@@ -66,7 +93,11 @@ def main():
         rules_dir = os.path.abspath(args.rules)
 
     if args.use_llm:
-        exit_code = run_agent(args.filepath, rules_dir, args.model, args.temperature, args.top_k)
+        exit_code = asyncio.run(
+            run_agent_async(
+                args.filepath, rules_dir, args.model, args.temperature, args.top_k, args.max_concurrency
+            )
+        )
     else:
         exit_code = run_deterministic(args.filepath, rules_dir)
 

@@ -10,4 +10,5 @@ sentence-transformers>=3.0.0
 langchain-huggingface>=0.1.0
 # v0.3 AI Agent: local LLM via Ollama (no API keys required)
 langchain-ollama>=1.0
+tqdm>=4.66
 pytest>=7.0
