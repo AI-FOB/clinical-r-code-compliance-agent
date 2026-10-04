@@ -8,4 +8,6 @@ chromadb>=0.5.0
 # v0.2 RAG: local, self-contained embeddings (no API keys required)
 sentence-transformers>=3.0.0
 langchain-huggingface>=0.1.0
+# v0.3 AI Agent: local LLM via Ollama (no API keys required)
+langchain-ollama>=1.0
 pytest>=7.0
