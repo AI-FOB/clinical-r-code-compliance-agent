@@ -1,4 +1,24 @@
-from pydantic import BaseModel, Field
+import re
+
+from pydantic import BaseModel, Field, field_validator
+
+_FENCE_RE = re.compile(r"^\s*```[A-Za-z0-9_+-]*[ \t]*\n?|\n?[ \t]*```\s*$")
+
+
+def clean_code_fix(value: str) -> str:
+    """Strip markdown code fences / inline backticks an LLM may wrap code in.
+
+    Internal newlines and leading indentation are preserved so multi-line
+    fixes (e.g. a documentation header block) survive intact.
+    """
+    if value is None:
+        return ""
+    text = _FENCE_RE.sub("", str(value))
+    stripped = text.strip()
+    if "\n" not in stripped and len(stripped) >= 2 and stripped[0] == stripped[-1] == "`":
+        text = stripped.strip("`")
+    return text.rstrip()
+
 
 class ComplianceFinding(BaseModel):
     """
@@ -39,6 +59,18 @@ class ComplianceFinding(BaseModel):
         ge=0.0, 
         le=1.0
     )
+    suggested_fix: str = Field(
+        default="",
+        description=(
+            "Exact R code that replaces the non-compliant line (empty when no "
+            "automated fix is available)"
+        ),
+    )
+
+    @field_validator("suggested_fix", mode="before")
+    @classmethod
+    def _strip_fences(cls, value: str) -> str:
+        return clean_code_fix(value)
 
 
 class LLMReview(BaseModel):
@@ -66,3 +98,15 @@ class LLMReview(BaseModel):
         ge=0.0,
         le=1.0
     )
+    suggested_fix: str = Field(
+        ...,
+        description=(
+            "The exact corrected R code that replaces the flagged line. Raw code "
+            "only: no markdown backticks, no explanation, no line numbers."
+        ),
+    )
+
+    @field_validator("suggested_fix", mode="before")
+    @classmethod
+    def _strip_fences(cls, value: str) -> str:
+        return clean_code_fix(value)

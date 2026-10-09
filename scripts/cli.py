@@ -9,7 +9,14 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from src.compliance_agent.tools.code_analyzer import BasicRCodeAnalyzer
 
 
-def run_deterministic(filepath, rules_dir):
+def print_report_paths(excel_path, html_path, updated_path):
+    print("Reports generated:")
+    print(f"  Excel:          {excel_path}")
+    print(f"  HTML:           {html_path}")
+    print(f"  Updated script: {updated_path}\n")
+
+
+def run_deterministic(filepath, rules_dir, export):
     analyzer = BasicRCodeAnalyzer(rules_dir)
     findings = analyzer.analyze_file(filepath)
 
@@ -22,10 +29,20 @@ def run_deterministic(filepath, rules_dir):
         print(f"[{finding['severity']}] {finding['rule_id']} at line {finding['line_number']}: {finding['rule_name']}")
         print(f"  Code: {finding['line_content']}")
         print(f"  Recommendation: {finding['recommendation']}\n")
+
+    if export:
+        from src.compliance_agent.tools.reporter import generate_reports
+        output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'examples', 'output'))
+        paths = generate_reports(
+            findings, filepath, output_dir, rules_dir=rules_dir,
+            run_metadata={"mode": "Deterministic"},
+        )
+        print_report_paths(*paths)
+
     return 1
 
 
-async def run_agent_async(filepath, rules_dir, model, temperature, top_k, max_concurrency):
+async def run_agent_async(filepath, rules_dir, model, temperature, top_k, max_concurrency, export):
     # Imported lazily so the deterministic path does not load torch/ChromaDB/Ollama.
     from tqdm import tqdm
     from src.compliance_agent.agent import ComplianceAgent
@@ -67,7 +84,21 @@ async def run_agent_async(filepath, rules_dir, model, temperature, top_k, max_co
         print(f"[{f.severity}] {f.rule_id} at line {f.line_number} (confidence {f.confidence:.2f})")
         print(f"  Finding: {f.finding}")
         print(f"  Evidence: {f.evidence}")
-        print(f"  Recommendation: {f.recommendation}\n")
+        print(f"  Recommendation: {f.recommendation}")
+        if f.suggested_fix:
+            fix = f.suggested_fix.replace("\n", "\n                 ")
+            print(f"  Suggested fix:  {fix}")
+        print()
+
+    if export:
+        from src.compliance_agent.tools.reporter import generate_reports
+        output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'examples', 'output'))
+        paths = generate_reports(
+            findings, filepath, output_dir, rules_dir=rules_dir,
+            run_metadata={"mode": "LLM Agent", "model": f"{model} (T={temperature})"},
+        )
+        print_report_paths(*paths)
+
     return 1
 
 
@@ -80,6 +111,7 @@ def main():
     parser.add_argument("--temperature", type=float, default=1.0, help="LLM sampling temperature used with --use-llm (default: 1.0).")
     parser.add_argument("--top-k", type=int, default=3, help="Number of rules retrieved per flagged snippet with --use-llm (default: 3).")
     parser.add_argument("--max-concurrency", type=int, default=4, help="Maximum concurrent LLM requests with --use-llm (default: 4).")
+    parser.add_argument("--export", action="store_true", help="Export findings to HTML and Excel reports in examples/output/.")
 
     args = parser.parse_args()
 
@@ -95,11 +127,11 @@ def main():
     if args.use_llm:
         exit_code = asyncio.run(
             run_agent_async(
-                args.filepath, rules_dir, args.model, args.temperature, args.top_k, args.max_concurrency
+                args.filepath, rules_dir, args.model, args.temperature, args.top_k, args.max_concurrency, args.export
             )
         )
     else:
-        exit_code = run_deterministic(args.filepath, rules_dir)
+        exit_code = run_deterministic(args.filepath, rules_dir, args.export)
 
     sys.exit(exit_code)
 

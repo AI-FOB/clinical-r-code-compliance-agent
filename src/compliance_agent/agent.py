@@ -11,6 +11,9 @@ Workflow per R script:
     5. Deterministic metadata (rule_id, line_number, severity) from the
        analyzer flag is merged in to form the final ``ComplianceFinding``.
        The LLM never decides these fields.
+    6. Each finding carries an LLM-authored ``suggested_fix`` (raw R code).
+       When several rules hit the same line, every review is told about the
+       others so each fix resolves all of them.
 """
 
 from __future__ import annotations
@@ -133,7 +136,11 @@ class ComplianceAgent:
 
         # Retrieval is fast local CPU work; do it up front so only the slow
         # LLM calls run concurrently.
-        inputs = [self._build_inputs(flag) for flag in flags]
+        co_flags = self._co_flagged_by_line(flags)
+        inputs = [
+            self._build_inputs(flag, co_flags.get(int(flag.get("line_number", 0)), []))
+            for flag in flags
+        ]
 
         semaphore = asyncio.Semaphore(self.max_concurrency)
         completed = 0
@@ -179,7 +186,24 @@ class ComplianceAgent:
             return self._fallback_finding(flag)
         return self._merge(flag, review)
 
-    def _build_inputs(self, flag: Dict[str, Any]) -> Dict[str, Any]:
+    def is_file_level_rule(self, rule_id: Optional[str]) -> bool:
+        """True if the rule is evaluated over the whole file (fix = insertion)."""
+        return self._rules_by_id.get(rule_id or "", {}).get("rule_type") == "file_level_presence"
+
+    def _co_flagged_by_line(self, flags: List[Dict[str, Any]]) -> Dict[int, List[Dict[str, Any]]]:
+        """Group line-level flags by line number (file-level flags are excluded)."""
+        grouped: Dict[int, List[Dict[str, Any]]] = {}
+        for flag in flags:
+            if self.is_file_level_rule(flag.get("rule_id")):
+                continue
+            grouped.setdefault(int(flag.get("line_number", 0)), []).append(flag)
+        return grouped
+
+    def _build_inputs(
+        self,
+        flag: Dict[str, Any],
+        line_flags: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         snippet = flag.get("line_content", "")
         flagged_rule_id = flag.get("rule_id")
         flagged_rule = self._strip(self._rules_by_id.get(flagged_rule_id, {
@@ -192,10 +216,16 @@ class ComplianceAgent:
             r for r in self._retrieve_rules(snippet, flagged_rule_id)
             if r.get("rule_id") != flagged_rule_id
         ]
+        others = [
+            f"- {f.get('rule_id')} ({f.get('rule_name')}): {f.get('recommendation')}"
+            for f in (line_flags or [])
+            if f.get("rule_id") != flagged_rule_id
+        ]
         return {
             "flagged_rule": json.dumps(flagged_rule, indent=2),
             "line_number": flag.get("line_number", ""),
             "code_snippet": snippet,
+            "co_flagged_rules": "\n".join(others) if others else "None",
             "related_rules": json.dumps(related, indent=2) if related else "[]",
         }
 
@@ -228,6 +258,7 @@ class ComplianceAgent:
             evidence=review.evidence,
             recommendation=review.recommendation,
             confidence=review.confidence,
+            suggested_fix=review.suggested_fix,
         )
 
     @staticmethod
@@ -241,4 +272,5 @@ class ComplianceAgent:
             evidence=flag.get("line_content", ""),
             recommendation=flag.get("recommendation", ""),
             confidence=FALLBACK_CONFIDENCE,
+            suggested_fix="",  # no automated fix without a valid LLM review
         )

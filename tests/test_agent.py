@@ -56,6 +56,7 @@ def llm_reply(confidence=0.92, **extra):
         "evidence": "TRT == 'ACTIVE'",
         "recommendation": "Use mapped treatment codes from the randomization table.",
         "confidence": confidence,
+        "suggested_fix": "dplyr::filter(TRT == trt_map$active) |>",
     }
     payload.update(extra)
     return json.dumps(payload)

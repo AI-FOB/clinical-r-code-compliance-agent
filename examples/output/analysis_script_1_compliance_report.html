@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compliance Report · analysis_script_1.R</title>
+<meta name="description" content="Clinical R code compliance validation report for analysis_script_1.R: checking summary, findings with code diffs, and the fully remediated script.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f1a;--bg-2:#111729;--panel:rgba(22,29,50,.72);--panel-solid:#161d32;--border:rgba(148,163,209,.14);
+  --text:#e6e9f5;--muted:#8d95b3;--accent:#7c8cff;--accent-2:#4fd1c5;
+  --high:#ff5c7a;--medium:#ffb547;--low:#4cc9f0;--other:#a0a4b8;
+  --add-bg:rgba(46,204,138,.12);--add-fg:#5ee6a8;--add-strong:rgba(46,204,138,.32);
+  --del-bg:rgba(255,92,122,.10);--del-fg:#ff8fa3;--del-strong:rgba(255,92,122,.32);
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+code,pre,.diff,.loc,.rule,.num,.sec-num,.code-file,.stats-list b,.conf .v{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);
+  background:radial-gradient(1200px 600px at 10% -10%,rgba(124,140,255,.18),transparent 60%),
+             radial-gradient(900px 500px at 110% 10%,rgba(79,209,197,.12),transparent 60%),var(--bg);
+  min-height:100vh;line-height:1.55}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 28px 80px}
+a{color:var(--accent)}
+/* Header */
+.hero{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end;justify-content:space-between;margin-bottom:28px;animation:rise .5s ease both}
+.brand{display:flex;gap:16px;align-items:center}
+.logo{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0b0f1a;box-shadow:0 10px 30px rgba(124,140,255,.35)}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{margin:2px 0 0;font-size:30px;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(90deg,#fff,#b9c2ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.meta{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font-size:12.5px;padding:7px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--border);color:var(--muted)}
+.chip b{color:var(--text);font-weight:600}
+.status{font-weight:700;letter-spacing:.06em}
+.status.PASS{color:#0b0f1a;background:var(--add-fg);border-color:transparent}
+.status.WARN{color:#0b0f1a;background:var(--medium);border-color:transparent}
+.status.FAIL{color:#fff;background:var(--high);border-color:transparent;box-shadow:0 0 0 4px rgba(255,92,122,.18)}
+nav.toc{position:sticky;top:0;z-index:5;display:flex;gap:6px;padding:10px;margin:0 0 28px;border-radius:14px;
+  background:rgba(11,15,26,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border)}
+nav.toc a{color:var(--muted);text-decoration:none;font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:10px;transition:.2s}
+nav.toc a:hover{color:var(--text);background:rgba(124,140,255,.14)}
+section{margin-bottom:44px;animation:rise .6s ease both}
+section:nth-of-type(2){animation-delay:.08s}section:nth-of-type(3){animation-delay:.16s}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+.sec-num{font-family:var(--mono);font-size:13px;color:var(--accent);border:1px solid rgba(124,140,255,.4);padding:3px 9px;border-radius:8px}
+h2{margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{color:var(--muted);font-size:14px;margin:-8px 0 18px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 20px 50px rgba(0,0,0,.25)}
+/* KPI grid */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:16px}
+.kpi{padding:18px 18px 16px;transition:transform .2s,border-color .2s}
+.kpi:hover{transform:translateY(-3px);border-color:rgba(124,140,255,.45)}
+.kpi .label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.kpi .value{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+.kpi .hint{font-size:12.5px;color:var(--muted);margin-top:2px}
+.ring{--p:0;--c:var(--accent-2);width:64px;height:64px;border-radius:50%;flex:none;
+  background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(148,163,209,.15) 0);display:grid;place-items:center}
+.ring::after{content:"";width:48px;height:48px;border-radius:50%;background:var(--panel-solid)}
+.kpi.with-ring{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.grid-2{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+@media (max-width:900px){.grid-2{grid-template-columns:1fr}}
+.card-pad{padding:22px}
+.card-title{font-size:14px;font-weight:700;margin:0 0 14px;color:#cfd5f0}
+.stack{display:flex;height:14px;border-radius:999px;overflow:hidden;background:rgba(148,163,209,.12);margin-bottom:18px}
+.stack span{display:block;height:100%;transition:width .8s ease}
+.sev-rows{display:grid;gap:10px}
+.sev-row{display:grid;grid-template-columns:100px 1fr auto;align-items:center;gap:12px;font-size:14px}
+.bar{height:8px;border-radius:999px;background:rgba(148,163,209,.12);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px}
+.num{font-family:var(--mono);text-align:right;color:var(--muted);white-space:nowrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
+.HIGH-c{background:var(--high)}.MEDIUM-c{background:var(--medium)}.LOW-c{background:var(--low)}.OTHER-c{background:var(--other)}
+.mini-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.mini-table th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em;padding:0 8px 10px}
+.mini-table td{padding:9px 8px;border-top:1px solid var(--border)}
+.stats-list{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-top:18px;font-size:13.5px}
+.stats-list div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--border);padding-bottom:6px;color:var(--muted)}
+.stats-list b{color:var(--text);font-family:var(--mono);font-weight:600}
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.badge.HIGH{color:var(--high);background:rgba(255,92,122,.12);border:1px solid rgba(255,92,122,.35)}
+.badge.MEDIUM{color:var(--medium);background:rgba(255,181,71,.12);border:1px solid rgba(255,181,71,.35)}
+.badge.LOW{color:var(--low);background:rgba(76,201,240,.12);border:1px solid rgba(76,201,240,.35)}
+.badge.OTHER{color:var(--other);background:rgba(160,164,184,.12);border:1px solid rgba(160,164,184,.35)}
+.tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;background:rgba(148,163,209,.12);color:var(--muted);white-space:nowrap}
+.tag.applied{color:var(--add-fg);background:var(--add-bg)}
+.tag.insertion{color:var(--accent-2);background:rgba(79,209,197,.12)}
+.tag.superseded{color:var(--medium);background:rgba(255,181,71,.12)}
+.tag.none{color:var(--del-fg);background:var(--del-bg)}
+/* Findings table */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.filter{font:600 13px Inter,sans-serif;color:var(--muted);background:var(--panel);border:1px solid var(--border);padding:8px 14px;border-radius:10px;cursor:pointer;transition:.2s}
+.filter:hover{color:var(--text);border-color:rgba(124,140,255,.45)}
+.filter.active{color:#0b0f1a;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent}
+.table-wrap{overflow-x:auto}
+table.findings{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+table.findings thead th{position:sticky;top:0;text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  font-weight:700;padding:14px 12px;background:var(--panel-solid);border-bottom:1px solid var(--border);white-space:nowrap}
+table.findings tbody td{padding:18px 12px;vertical-align:top;border-bottom:1px solid var(--border)}
+table.findings tbody tr{transition:background .2s}
+table.findings tbody tr:hover{background:rgba(124,140,255,.05)}
+table.findings tbody tr:last-child td{border-bottom:none}
+.sev-cell{border-left:3px solid transparent}
+tr.HIGH .sev-cell{border-left-color:var(--high)}tr.MEDIUM .sev-cell{border-left-color:var(--medium)}tr.LOW .sev-cell{border-left-color:var(--low)}
+.loc{font-family:var(--mono);font-size:13px;color:#cfd5f0;white-space:nowrap}
+.loc small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.rule{font-family:var(--mono);font-weight:600;color:#c6ccff;white-space:nowrap}
+.finding-text{margin:0 0 8px;color:#dfe3f3}
+.rec{margin:0;font-size:13px;color:var(--muted)}
+.rec b{color:#b9c2ff;font-weight:600}
+.diff{font-family:var(--mono);font-size:12.5px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#0a0e18;min-width:280px}
+.diff-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;font-family:Inter,sans-serif;font-size:11.5px;color:var(--muted);background:rgba(148,163,209,.06);border-bottom:1px solid var(--border)}
+.diff-line{display:grid;grid-template-columns:44px 18px 1fr;white-space:pre-wrap;word-break:break-word}
+.diff-line .g{color:#5b6488;text-align:right;padding:6px 6px 6px 0;user-select:none}
+.diff-line .s{padding:6px 0;user-select:none;font-weight:700}
+.diff-line code{padding:6px 12px 6px 0;font-family:inherit}
+.diff-line.del{background:var(--del-bg);color:var(--del-fg)}
+.diff-line.del .s{color:var(--high)}
+.diff-line.del code{text-decoration:line-through;text-decoration-color:rgba(255,143,163,.55)}
+.diff-line.del mark{background:var(--del-strong);color:#ffd1da;border-radius:3px}
+.diff-line.add{background:var(--add-bg);color:var(--add-fg)}
+.diff-line.add .s{color:#2ecc8a}
+.diff-line.add mark{background:var(--add-strong);color:#d6ffe9;border-radius:3px}
+.diff-line.ctx{color:#aab2d3}
+.diff-note{padding:8px 12px;font-family:Inter,sans-serif;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+.conf{min-width:96px}
+.conf .v{font-family:var(--mono);font-weight:600;font-size:13px}
+.conf .bar{margin-top:6px}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+/* Updated code */
+.code-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.dots{display:flex;gap:6px}.dots i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.code-file{font-family:var(--mono);font-size:13px;color:#cfd5f0;margin-left:12px}
+.code-actions{display:flex;gap:10px;align-items:center}
+.btn{font:600 13px Inter,sans-serif;color:#0b0f1a;background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;padding:9px 16px;border-radius:10px;cursor:pointer;transition:transform .15s,box-shadow .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(124,140,255,.35)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend .lm::before{background:var(--add-strong)}.legend .li::before{background:rgba(79,209,197,.35)}
+pre.code{margin:0;max-height:620px;overflow:auto;background:#0a0e18;border-radius:0 0 var(--radius) var(--radius);padding:14px 0;font-size:13px;line-height:1.7}
+pre.code code{font-family:var(--mono);display:block;min-width:max-content}
+.cl{display:block;padding:0 22px 0 0;border-left:3px solid transparent}
+.cl .n{display:inline-block;width:56px;padding-right:16px;text-align:right;color:#4a5275;user-select:none}
+.cl .o{display:inline-block;width:56px;padding-right:16px;text-align:right;color:#3a4160;user-select:none;font-size:11px}
+.cl.modified{background:var(--add-bg);border-left-color:#2ecc8a;color:#d6ffe9}
+.cl.inserted{background:rgba(79,209,197,.10);border-left-color:var(--accent-2);color:#c9fff7}
+.cl:hover{background:rgba(124,140,255,.07)}
+.notice{padding:14px 18px;font-size:13.5px;color:var(--medium);background:rgba(255,181,71,.08);border-bottom:1px solid var(--border)}
+footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:40px;line-height:1.7}
+footer .warn{display:inline-block;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,181,71,.3);background:rgba(255,181,71,.07);color:#ffd59a;margin-bottom:10px}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media print{body{background:#fff;color:#111}.panel,nav.toc{backdrop-filter:none}nav.toc,.toolbar,.btn{display:none}pre.code{max-height:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="brand">
+    <div class="logo">Rx</div>
+    <div>
+      <div class="eyebrow">Clinical Validation Report</div>
+      <h1>R Code Compliance Report</h1>
+    </div>
+  </div>
+  <div class="meta">
+    <span class="chip">File <b>analysis_script_1.R</b></span>
+    <span class="chip">Mode <b>LLM Agent</b></span>
+    <span class="chip">Model <b>gemma4:e4b (T=1.0)</b></span>
+    <span class="chip">Generated <b>2026-10-08 21:50:15</b></span>
+    <span class="chip status FAIL">FAIL</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Report sections">
+  <a href="#summary">01 · Checking Summary</a>
+  <a href="#findings">02 · Findings &amp; Code Diffs</a>
+  <a href="#updated-code">03 · Fully Updated Code</a>
+</nav>
+
+<main>
+<!-- ============================ SECTION 1 ============================ -->
+<section id="summary">
+  <div class="sec-head"><span class="sec-num">01</span><h2>Checking Summary</h2></div>
+  <p class="sec-sub">Execution statistics and severity breakdown for this validation run.</p>
+
+  <div class="kpis">
+    <div class="panel kpi"><div class="label">Files Scanned</div><div class="value">1</div><div class="hint">0 fully compliant</div></div>
+    <div class="panel kpi"><div class="label">Lines Evaluated</div><div class="value">19</div><div class="hint">16 non-blank</div></div>
+    <div class="panel kpi"><div class="label">Total Findings</div><div class="value">9</div><div class="hint">6 distinct rules</div></div>
+    <div class="panel kpi with-ring">
+      <div><div class="label">Line Compliance</div><div class="value">68.4%</div><div class="hint">6 lines flagged</div></div>
+      <div class="ring" style="--p:68.4"></div>
+    </div>
+    <div class="panel kpi with-ring">
+      <div><div class="label">Perfect Compliance</div><div class="value">0.0%</div><div class="hint">files with zero findings</div></div>
+      <div class="ring" style="--p:0.0;--c:var(--accent)"></div>
+    </div>
+    <div class="panel kpi with-ring">
+      <div><div class="label">Fix Coverage</div><div class="value">88.9%</div><div class="hint">8 / 9 with code fix</div></div>
+      <div class="ring" style="--p:88.9;--c:#2ecc8a"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel card-pad">
+      <h3 class="card-title">Severity Breakdown</h3>
+      <div class="stack" role="img" aria-label="Severity distribution">
+        
+        <span class="HIGH-c" style="width:22.2%" title="HIGH: 2"></span>
+        
+        <span class="MEDIUM-c" style="width:44.4%" title="MEDIUM: 4"></span>
+        
+        <span class="LOW-c" style="width:33.3%" title="LOW: 3"></span>
+        
+      </div>
+      <div class="sev-rows">
+        
+        <div class="sev-row">
+          <span><i class="dot HIGH-c"></i>HIGH</span>
+          <div class="bar"><i class="HIGH-c" style="width:22.2%"></i></div>
+          <span class="num">2 · 22.2%</span>
+        </div>
+        
+        <div class="sev-row">
+          <span><i class="dot MEDIUM-c"></i>MEDIUM</span>
+          <div class="bar"><i class="MEDIUM-c" style="width:44.4%"></i></div>
+          <span class="num">4 · 44.4%</span>
+        </div>
+        
+        <div class="sev-row">
+          <span><i class="dot LOW-c"></i>LOW</span>
+          <div class="bar"><i class="LOW-c" style="width:33.3%"></i></div>
+          <span class="num">3 · 33.3%</span>
+        </div>
+        
+      </div>
+      <div class="stats-list">
+        <div>Average confidence <b>0.99</b></div>
+        <div>Low-confidence (&lt; 0.7) <b>0</b></div>
+        <div>Lines modified <b>5</b></div>
+        <div>Lines inserted <b>6</b></div>
+        <div>File-level findings <b>1</b></div>
+        <div>Fix conflicts resolved <b>1</b></div>
+      </div>
+    </div>
+    <div class="panel card-pad">
+      <h3 class="card-title">Findings by Rule</h3>
+      
+      <table class="mini-table">
+        <thead><tr><th>Rule</th><th>Severity</th><th style="text-align:right">Count</th></tr></thead>
+        <tbody>
+        
+          <tr><td class="rule">COMP-001</td><td><span class="badge HIGH">HIGH</span></td><td class="num">1</td></tr>
+        
+          <tr><td class="rule">COMP-002</td><td><span class="badge MEDIUM">MEDIUM</span></td><td class="num">1</td></tr>
+        
+          <tr><td class="rule">COMP-003</td><td><span class="badge MEDIUM">MEDIUM</span></td><td class="num">1</td></tr>
+        
+          <tr><td class="rule">COMP-004</td><td><span class="badge HIGH">HIGH</span></td><td class="num">1</td></tr>
+        
+          <tr><td class="rule">COMP-005</td><td><span class="badge LOW">LOW</span></td><td class="num">3</td></tr>
+        
+          <tr><td class="rule">COMP-006</td><td><span class="badge MEDIUM">MEDIUM</span></td><td class="num">2</td></tr>
+        
+        </tbody>
+      </table>
+      
+    </div>
+  </div>
+</section>
+
+<!-- ============================ SECTION 2 ============================ -->
+<section id="findings">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Detailed Findings &amp; Code Diffs</h2></div>
+  <p class="sec-sub">Original code is shown in <span style="color:var(--del-fg)">red / strikethrough</span>; the suggested fix in <span style="color:var(--add-fg)">green</span>.</p>
+
+  
+  <div class="toolbar" role="group" aria-label="Filter findings by severity">
+    <button class="filter active" id="filter-all" data-sev="ALL">All (9)</button>
+    
+    <button class="filter" id="filter-high" data-sev="HIGH">HIGH (2)</button>
+    
+    <button class="filter" id="filter-medium" data-sev="MEDIUM">MEDIUM (4)</button>
+    
+    <button class="filter" id="filter-low" data-sev="LOW">LOW (3)</button>
+    
+  </div>
+  <div class="panel table-wrap">
+    <table class="findings">
+      <thead><tr><th>Severity</th><th>Location</th><th>Rule</th><th style="width:28%">Finding &amp; Recommendation</th><th style="width:40%">Code Diff</th><th>Confidence</th></tr></thead>
+      <tbody>
+      
+        <tr class="HIGH" data-sev="HIGH" id="finding-1">
+          <td class="sev-cell"><span class="badge HIGH">HIGH</span></td>
+          <td class="loc">L1<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-004</td>
+          <td>
+            <p class="finding-text">The rule requires a comprehensive documentation header at the start of the script containing specific keywords (Purpose, Inputs, Outputs, Assumptions, Usage Note, and Parameter). The provided content is merely a list of missing keywords and does not constitute the required structured comment block header.</p>
+            <p class="rec"><b>Recommendation:</b> Add a comment block at the top of the file containing all required documentation keywords.</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Insert at top of file</span>
+                <span class="tag insertion">＋ Inserted</span>
+                
+              </div>
+              
+              
+              <div class="diff-line add"><span class="g"></span><span class="s">+</span><code># Purpose: [Describe the script&#39;s overall goal.]
+# Inputs: [Specify required input data and structure.]
+# Outputs: [Specify the data product/result generated.]
+# Assumptions: [List any underlying assumptions made during modeling.]
+# Usage Note: [Provide instructions on executing the code.]
+# Parameter: [Define any custom parameters used in the script.]</code></div>
+              
+              <div class="diff-note">Evidence: Missing keywords: Purpose, Inputs, Outputs, Assumptions, Usage Note, Parameter</div>
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="LOW" data-sev="LOW" id="finding-2">
+          <td class="sev-cell"><span class="badge LOW">LOW</span></td>
+          <td class="loc">L7<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-005</td>
+          <td>
+            <p class="finding-text">The code uses the `magrittr` pipe operator (`%&gt;%`), which is deprecated in favor of the native R pipe operator (`|&gt;`) per compliance standard COMP-005.</p>
+            <p class="rec"><b>Recommendation:</b> Replace %&gt;% with |&gt;</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 7</span>
+                <span class="tag applied">✓ Applied</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">7</span><span class="s">−</span><code>active_patients &lt;- data <mark>%</mark>&gt;<mark>%</mark></code></div>
+              
+              
+              <div class="diff-line add"><span class="g">7</span><span class="s">+</span><code>active_patients &lt;- data <mark>|</mark>&gt;</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="HIGH" data-sev="HIGH" id="finding-3">
+          <td class="sev-cell"><span class="badge HIGH">HIGH</span></td>
+          <td class="loc">L8<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-001</td>
+          <td>
+            <p class="finding-text">The code hard-codes the treatment assignment &#39;ACTIVE&#39;, which violates the policy requiring the use of dynamic mappings or parameters derived from randomization tables instead of specific string literals.</p>
+            <p class="rec"><b>Recommendation:</b> Use dynamic mappings or parameters for treatment conditions instead of hard-coded string values.</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 8</span>
+                <span class="tag superseded">Merged into COMP-005 fix</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">8</span><span class="s">−</span><code>  filter(TRT == <mark>&#39;ACTIVE&#39;</mark>) <mark>%</mark>&gt;<mark>%</mark></code></div>
+              
+              
+              <div class="diff-line add"><span class="g">8</span><span class="s">+</span><code>  filter(TRT == <mark>!!sym(&#34;active_group&#34;)</mark>) <mark>|</mark>&gt;</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">0.95</div>
+            <div class="bar"><i style="width:95.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="LOW" data-sev="LOW" id="finding-4">
+          <td class="sev-cell"><span class="badge LOW">LOW</span></td>
+          <td class="loc">L8<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-005</td>
+          <td>
+            <p class="finding-text">The code violates two compliance rules. First, the pipeline operator `%&gt;%` is deprecated and must be replaced with the native R pipe `|&gt;`. Second, the treatment condition &#39;ACTIVE&#39; is hard-coded, which is prohibited by COMP-001 and must be replaced with a dynamic mapping or parameter.</p>
+            <p class="rec"><b>Recommendation:</b> Replace `%&gt;%` with `|&gt;` for pipeline usage. For the treatment condition, replace hard-coded strings like &#39;ACTIVE&#39; with a designated parameter or dynamic mapping variable provided by the analysis framework.</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 8</span>
+                <span class="tag applied">✓ Applied</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">8</span><span class="s">−</span><code>  filter(TRT == <mark>&#39;ACTIVE&#39;</mark>) <mark>%</mark>&gt;<mark>%</mark></code></div>
+              
+              
+              <div class="diff-line add"><span class="g">8</span><span class="s">+</span><code>  filter(TRT == <mark>target_treatment_param</mark>) <mark>|</mark>&gt;</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="MEDIUM" data-sev="MEDIUM" id="finding-5">
+          <td class="sev-cell"><span class="badge MEDIUM">MEDIUM</span></td>
+          <td class="loc">L9<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-006</td>
+          <td>
+            <p class="finding-text">The function `mutate` is called without explicit qualification of its package namespace, violating the rule against using common non-base functions without prefixing them. Additionally, the pipe operator `%&gt;%` must be replaced with the native R pipe `|&gt;`.</p>
+            <p class="rec"><b>Recommendation:</b> Prefix the function call with its package namespace, e.g., dplyr::mutate() or dplyr::select(). The pipe operator must also be replaced with the native R pipe (|&gt;).</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 9</span>
+                <span class="tag applied">✓ Applied</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">9</span><span class="s">−</span><code>  mutate(new_col = 1) <mark>%</mark>&gt;<mark>%</mark></code></div>
+              
+              
+              <div class="diff-line add"><span class="g">9</span><span class="s">+</span><code>  <mark>dplyr::</mark>mutate(new_col = 1) <mark>|</mark>&gt;</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="LOW" data-sev="LOW" id="finding-6">
+          <td class="sev-cell"><span class="badge LOW">LOW</span></td>
+          <td class="loc">L9<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-005</td>
+          <td>
+            <p class="finding-text">The code violates two rules: it uses the deprecated magrittr pipe operator (%&gt;%), which should be replaced by the native R pipe (|&gt;), and it calls the &#39;mutate&#39; function without explicitly defining its package namespace (e.g., dplyr::mutate), which is required for compliance.</p>
+            <p class="rec"><b>Recommendation:</b> Replace the magrittr pipe (%&gt;%) with the native R pipe (|&gt;) and prefix non-base functions like &#39;mutate&#39; with their package namespace (e.g., dplyr::mutate).</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 9</span>
+                <span class="tag superseded">Merged into COMP-006 fix</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">9</span><span class="s">−</span><code>  mutate(new_col = 1) <mark>%</mark>&gt;<mark>%</mark></code></div>
+              
+              
+              <div class="diff-line add"><span class="g">9</span><span class="s">+</span><code>  <mark>dplyr::</mark>mutate(new_col = 1) <mark>|</mark>&gt;</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="MEDIUM" data-sev="MEDIUM" id="finding-7">
+          <td class="sev-cell"><span class="badge MEDIUM">MEDIUM</span></td>
+          <td class="loc">L10<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-006</td>
+          <td>
+            <p class="finding-text">The function &#39;select&#39; is called without specifying its package namespace. Since &#39;select&#39; is a common function provided by packages like dplyr, it must be explicitly namespaced to ensure compliance and prevent potential conflicts.</p>
+            <p class="rec"><b>Recommendation:</b> Prefix the function call with its package namespace, e.g., dplyr::mutate() or dplyr::select().</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 10</span>
+                <span class="tag applied">✓ Applied</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">10</span><span class="s">−</span><code>  select(outcome, age, biomarker, new_col)</code></div>
+              
+              
+              <div class="diff-line add"><span class="g">10</span><span class="s">+</span><code>  <mark>dplyr::</mark>select(outcome, age, biomarker, new_col)</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="MEDIUM" data-sev="MEDIUM" id="finding-8">
+          <td class="sev-cell"><span class="badge MEDIUM">MEDIUM</span></td>
+          <td class="loc">L14<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-002</td>
+          <td>
+            <p class="finding-text">The use of na.omit() directly on the analysis dataset violates compliance because it performs global case deletion based on missing values without explicit control, which can lead to unintended and unrecorded data loss. Missing value handling must be explicit.</p>
+            <p class="rec"><b>Recommendation:</b> Use explicit missing value handling (e.g., tidyr::drop_na on specific columns) or appropriate imputation methods.</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 14</span>
+                <span class="tag applied">✓ Applied</span>
+                
+              </div>
+              
+              <div class="diff-line del"><span class="g">14</span><span class="s">−</span><code>clean_data &lt;- <mark>na.omit(</mark>active_patients)</code></div>
+              
+              
+              <div class="diff-line add"><span class="g">14</span><span class="s">+</span><code>clean_data &lt;- active_patients<mark> |&gt; tidyr::drop_na(</mark>)</code></div>
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+        <tr class="MEDIUM" data-sev="MEDIUM" id="finding-9">
+          <td class="sev-cell"><span class="badge MEDIUM">MEDIUM</span></td>
+          <td class="loc">L17<small>analysis_script_1.R</small></td>
+          <td class="rule">COMP-003</td>
+          <td>
+            <p class="finding-text">The script violates the rule by calling set.seed() directly within the analysis function/script. Random seeds should only be set globally in the main execution script to ensure reproducibility and adherence to compliance standards.</p>
+            <p class="rec"><b>Recommendation:</b> Remove set.seed() from individual analysis functions. Define seeds globally in the main execution script.</p>
+          </td>
+          <td>
+            <div class="diff">
+              <div class="diff-head">
+                <span>Line 17</span>
+                <span class="tag none">No automated fix</span>
+              </div>
+              
+              <div class="diff-line ctx"><span class="g">17</span><span class="s"> </span><code>set.seed(42) # This violates COMP-003</code></div>
+              
+              
+              
+            </div>
+          </td>
+          <td class="conf">
+            
+            <div class="v">1.00</div>
+            <div class="bar"><i style="width:100.0%;background:var(--add-fg)"></i></div>
+            
+          </td>
+        </tr>
+      
+      </tbody>
+    </table>
+  </div>
+  
+</section>
+
+<!-- ============================ SECTION 3 ============================ -->
+<section id="updated-code">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Fully Updated Code</h2></div>
+  <p class="sec-sub">The reconstructed script with every suggested fix applied. Highlighted lines differ from the original.</p>
+  <div class="panel">
+    <div class="code-head">
+      <div style="display:flex;align-items:center"><div class="dots"><i></i><i></i><i></i></div><span class="code-file">analysis_script_1_updated.R</span></div>
+      <div class="code-actions">
+        <div class="legend"><span class="lm">Modified (5)</span><span class="li">Inserted (6)</span></div>
+        <button class="btn" id="copy-code-btn" type="button">Copy script</button>
+      </div>
+    </div>
+    
+    <pre class="code"><code><span class="cl inserted"><span class="n">1</span><span class="o" title="Original line"></span># Purpose: [Describe the script&#39;s overall goal.]</span><span class="cl inserted"><span class="n">2</span><span class="o" title="Original line"></span># Inputs: [Specify required input data and structure.]</span><span class="cl inserted"><span class="n">3</span><span class="o" title="Original line"></span># Outputs: [Specify the data product/result generated.]</span><span class="cl inserted"><span class="n">4</span><span class="o" title="Original line"></span># Assumptions: [List any underlying assumptions made during modeling.]</span><span class="cl inserted"><span class="n">5</span><span class="o" title="Original line"></span># Usage Note: [Provide instructions on executing the code.]</span><span class="cl inserted"><span class="n">6</span><span class="o" title="Original line"></span># Parameter: [Define any custom parameters used in the script.]</span><span class="cl unchanged"><span class="n">7</span><span class="o" title="Original line"></span># Load data</span><span class="cl unchanged"><span class="n">8</span><span class="o" title="Original line"></span>library(dplyr)</span><span class="cl unchanged"><span class="n">9</span><span class="o" title="Original line"></span>data &lt;- read.csv(&#34;data/clinical_trial_data.csv&#34;)</span><span class="cl unchanged"><span class="n">10</span><span class="o" title="Original line"></span></span><span class="cl unchanged"><span class="n">11</span><span class="o" title="Original line"></span># Filter for active treatment</span><span class="cl unchanged"><span class="n">12</span><span class="o" title="Original line"></span># This violates COMP-001</span><span class="cl modified"><span class="n">13</span><span class="o" title="Original line">7</span>active_patients &lt;- data |&gt;</span><span class="cl modified"><span class="n">14</span><span class="o" title="Original line">8</span>  filter(TRT == target_treatment_param) |&gt;</span><span class="cl modified"><span class="n">15</span><span class="o" title="Original line">9</span>  dplyr::mutate(new_col = 1) |&gt;</span><span class="cl modified"><span class="n">16</span><span class="o" title="Original line">10</span>  dplyr::select(outcome, age, biomarker, new_col)</span><span class="cl unchanged"><span class="n">17</span><span class="o" title="Original line"></span></span><span class="cl unchanged"><span class="n">18</span><span class="o" title="Original line"></span># Remove missing values</span><span class="cl unchanged"><span class="n">19</span><span class="o" title="Original line"></span># This violates COMP-002</span><span class="cl modified"><span class="n">20</span><span class="o" title="Original line">14</span>clean_data &lt;- active_patients |&gt; tidyr::drop_na()</span><span class="cl unchanged"><span class="n">21</span><span class="o" title="Original line"></span></span><span class="cl unchanged"><span class="n">22</span><span class="o" title="Original line"></span># Run model</span><span class="cl unchanged"><span class="n">23</span><span class="o" title="Original line"></span>set.seed(42) # This violates COMP-003</span><span class="cl unchanged"><span class="n">24</span><span class="o" title="Original line"></span>model &lt;- lm(outcome ~ age + biomarker, data = clean_data)</span><span class="cl unchanged"><span class="n">25</span><span class="o" title="Original line"></span>summary(model)</span></code></pre>
+    <textarea id="updated-code-raw" hidden># Purpose: [Describe the script&#39;s overall goal.]
+# Inputs: [Specify required input data and structure.]
+# Outputs: [Specify the data product/result generated.]
+# Assumptions: [List any underlying assumptions made during modeling.]
+# Usage Note: [Provide instructions on executing the code.]
+# Parameter: [Define any custom parameters used in the script.]
+# Load data
+library(dplyr)
+data &lt;- read.csv(&#34;data/clinical_trial_data.csv&#34;)
+
+# Filter for active treatment
+# This violates COMP-001
+active_patients &lt;- data |&gt;
+  filter(TRT == target_treatment_param) |&gt;
+  dplyr::mutate(new_col = 1) |&gt;
+  dplyr::select(outcome, age, biomarker, new_col)
+
+# Remove missing values
+# This violates COMP-002
+clean_data &lt;- active_patients |&gt; tidyr::drop_na()
+
+# Run model
+set.seed(42) # This violates COMP-003
+model &lt;- lm(outcome ~ age + biomarker, data = clean_data)
+summary(model)
+</textarea>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="warn">⚠ AI-suggested fixes must be reviewed and validated by a qualified clinical programmer before use in any regulated submission.</div>
+  <div>Generated by the Clinical R Code Compliance Agent · 2026-10-08 21:50:15</div>
+</footer>
+</div>
+
+<script>
+(function(){
+  var buttons=document.querySelectorAll('.filter');
+  buttons.forEach(function(b){b.addEventListener('click',function(){
+    buttons.forEach(function(x){x.classList.remove('active')});b.classList.add('active');
+    var sev=b.getAttribute('data-sev');
+    document.querySelectorAll('table.findings tbody tr').forEach(function(r){
+      r.style.display=(sev==='ALL'||r.getAttribute('data-sev')===sev)?'':'none';});
+  });});
+  var btn=document.getElementById('copy-code-btn');
+  if(btn){btn.addEventListener('click',function(){
+    var raw=document.getElementById('updated-code-raw').value;
+    var done=function(){btn.textContent='Copied ✓';setTimeout(function(){btn.textContent='Copy script'},1600)};
+    if(navigator.clipboard){navigator.clipboard.writeText(raw).then(done,function(){fallback(raw);done();});}
+    else{fallback(raw);done();}
+  });}
+  function fallback(t){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);}
+})();
+</script>
+</body>
+</html>
