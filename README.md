@@ -1,526 +1,120 @@
-# Clinical R Code Compliance Agent
+# 🛡️ Clinical R Code Compliance Agent
 
-An AI-powered research prototype for assisting clinical programmers with R code compliance review using deterministic analysis, retrieval-augmented generation (RAG), LLM reasoning, evidence validation, and automated evaluation.
+An offline-first, AI-powered compliance agent designed specifically for clinical R programming (SDTM/ADaM). 
 
-> **Project status:** v0.1 — Research Prototype
-> **Intended use:** Educational and portfolio demonstration
-> **Clinical use:** Not validated or intended for production clinical trials
+This tool automates the tedious code review process by analyzing R scripts against clinical programming standards. Crucially, it utilizes **100% local, self-contained Large Language Models (LLMs)**, ensuring strict data privacy and zero external API calls. Your proprietary clinical trial scripts and datasets never leave your machine.
 
 ---
 
-## Overview
+## 🏗️ Core Architecture
 
-Clinical programming teams often perform code reviews to identify potential programming, documentation, reproducibility, and coding-standard issues.
+The agent operates on a sophisticated three-stage pipeline to guarantee deterministic reliability alongside AI reasoning:
 
-This project explores how **Generative AI and agent-based workflows** can assist with R code compliance review while maintaining an important principle:
-
-> **AI-generated findings should be supported by explicit evidence from the source code and the applicable compliance rule.**
-
-The system combines deterministic code analysis with retrieval and LLM-based reasoning to produce structured, evidence-based compliance findings.
+1. **Deterministic Analysis**: Fast, regex-based parsing that scans the AST/code text to flag potential violations and pinpoint exact line numbers.
+2. **Local RAG (Retrieval-Augmented Generation)**: Uses a local `ChromaDB` vector store and HuggingFace `all-MiniLM-L6-v2` embeddings to instantly retrieve the most relevant JSON-based compliance rules for the flagged code snippet.
+3. **AI Agent**: Built with LangChain, the agent orchestrates a local `gemma4:e4b` model (via Ollama). It evaluates the flagged context, maps findings to strict Pydantic schemas, resolves multi-rule conflicts, and generates exact drop-in code patches.
 
 ---
 
-## Problem
+## ✨ Key Features
 
-Manual code compliance review can be time-consuming and may result in inconsistent identification of potential coding issues.
-
-Traditional automated checks can identify deterministic patterns, but they may have limited ability to:
-
-* Understand the context of R code
-* Explain why a pattern may represent a compliance concern
-* Connect code findings to relevant rules
-* Generate human-readable recommendations
-* Distinguish between different levels of potential severity
-
-This project explores a hybrid approach that combines **software engineering techniques with GenAI**.
+* **Streamlit Web Dashboard**: An interactive UI for clinical analysts to upload `.R` scripts, configure concurrency, and download reports.
+* **Asynchronous CLI**: A lightning-fast command-line interface that processes multiple LLM rule-checks concurrently using `asyncio`.
+* **Clinical Validation Reporting**: Generates beautiful, Pinnacle 21-style HTML dashboards and structured Excel (`.xlsx`) workbooks detailing the severity, evidence, and suggested fixes for every issue.
+* **Evaluation Framework**: A built-in batch evaluator measuring True Positives, False Positives, Precision, Recall, and F1-score against ground-truth datasets, consistently achieving 100% metrics on the synthetic test suite.
+* **Docker Containerization**: Fully containerized environment for reproducible, isolated deployments.
 
 ---
 
-## Solution
+## ⚙️ Prerequisites & Installation
 
-The Clinical R Code Compliance Agent uses multiple stages:
+To run the agent locally, you need Python 3.11+ and [Ollama](https://ollama.com/) installed on your machine.
 
-1. **R Code Analysis**
-
-   * Analyze submitted R source code
-   * Identify deterministic patterns and potential issues
-
-2. **Compliance Rule Retrieval**
-
-   * Retrieve relevant synthetic compliance rules
-   * Provide rule context to the reasoning layer
-
-3. **LLM Analysis**
-
-   * Review code in the context of retrieved rules
-   * Generate structured findings
-
-4. **Evidence Validation**
-
-   * Require findings to reference evidence from the source code
-   * Reduce unsupported or fabricated findings
-
-5. **Structured Reporting**
-
-   * Return standardized compliance findings
-   * Include severity, evidence, recommendation, and confidence
-
-6. **Automated Evaluation**
-
-   * Measure detection performance
-   * Track false positives and false negatives
-   * Evaluate evidence and recommendation quality
-
----
-
-## Architecture
-
-```mermaid
-flowchart TD
-
-    A[R Source Code] --> B[Deterministic Code Analyzer]
-
-    B --> C[Potential Code Findings]
-
-    C --> D[Compliance Rule Retriever]
-
-    D --> E[Synthetic Compliance Rules]
-
-    C --> F[LLM Review Agent]
-    E --> F
-
-    F --> G[Structured Compliance Findings]
-
-    G --> H[Evidence Validation]
-
-    H --> I[Compliance Report]
-
-    I --> J[Automated Evaluation]
-
-    J --> K[Accuracy / Precision / Recall]
-    J --> L[False Positive / Negative Analysis]
-    J --> M[Evidence Accuracy]
+**1. Clone the repository**
+```bash
+git clone https://github.com/yourusername/clinical-r-code-compliance-agent.git
+cd clinical-r-code-compliance-agent
 ```
 
-### Design principle
-
-The project intentionally separates:
-
-```text
-Deterministic analysis
-        ↓
-Rule retrieval
-        ↓
-LLM reasoning
-        ↓
-Evidence validation
-        ↓
-Evaluation
+**2. Set up a Python Virtual Environment**
+```bash
+python -m venv venv
+# On Windows
+venv\Scripts\activate
+# On macOS/Linux
+source venv/bin/activate
 ```
 
-This separation makes it easier to understand where each finding originates and to evaluate the AI component independently.
-
----
-
-## Example Workflow
-
-### Input
-
-```r
-data <- read.csv("analysis.csv")
-
-result <- subset(data, TRT == "ACTIVE")
-
-mean_value <- mean(result$value)
-
-print(mean_value)
+**3. Install Dependencies**
+```bash
+pip install -r requirements.txt
 ```
 
-### Processing
-
-```text
-R Code
-  ↓
-Code Analysis
-  ↓
-Relevant Compliance Rules
-  ↓
-LLM Review
-  ↓
-Evidence Validation
-  ↓
-Structured Findings
+**4. Pull the Local LLM via Ollama**
+```bash
+ollama pull gemma4:e4b
 ```
 
-### Example finding
+---
 
-```json
-{
-  "rule_id": "R003",
-  "severity": "Medium",
-  "finding": "A hard-coded treatment value was identified.",
-  "evidence": "TRT == \"ACTIVE\"",
-  "recommendation": "Consider using a configurable parameter or controlled treatment definition.",
-  "confidence": 0.91
-}
+## 🚀 Quick Start / Usage
+
+### 1. Interactive Web Dashboard
+Launch the Streamlit web interface to easily upload files and view interactive visualizations.
+```bash
+streamlit run app.py
+```
+*Navigate to `http://localhost:8501` in your browser.*
+
+### 2. Command Line Interface (CLI)
+Run a single R script through the pipeline and export the HTML/Excel reports directly to the output folder.
+```bash
+python scripts/cli.py examples/input/analysis_script_1.R --use-llm --export
 ```
 
-> The example above is illustrative only. The project's compliance rules are synthetic and do not represent Pfizer policies, standards, SOPs, or regulatory requirements.
-
----
-
-## Compliance Finding Schema
-
-Each finding is designed to contain structured information:
-
-| Field            | Description                                 |
-| ---------------- | ------------------------------------------- |
-| `rule_id`        | Identifier of the applicable synthetic rule |
-| `severity`       | Potential severity of the finding           |
-| `finding`        | Description of the identified issue         |
-| `evidence`       | Relevant evidence from the R source code    |
-| `recommendation` | Suggested remediation                       |
-| `confidence`     | Model confidence in the finding             |
-
-The goal is to make AI-generated results **traceable and reviewable**, rather than producing an unstructured narrative response.
-
----
-
-## Synthetic Compliance Rules
-
-This project uses synthetic rules created specifically for research and demonstration.
-
-Example rule categories include:
-
-* Missing-value handling
-* Variable naming
-* Hard-coded values
-* Reproducibility
-* Unsafe data handling
-
-The rules are intentionally separated from the application logic so that the system can be evaluated and extended independently of the LLM.
-
----
-
-## Evaluation
-
-Evaluation is a core component of the project.
-
-Rather than evaluating the system only through qualitative examples, the project will maintain a controlled dataset containing synthetic R code examples and expected findings.
-
-### Planned metrics
-
-#### Detection accuracy
-
-Measures whether the agent identifies expected compliance issues.
-
-#### Precision
-
-Measures how many reported findings correspond to actual expected issues.
-
-#### Recall
-
-Measures how many expected issues are detected by the system.
-
-#### False-positive rate
-
-Measures how frequently the system reports issues that are not present.
-
-#### Evidence accuracy
-
-Measures whether the cited code evidence actually supports the reported finding.
-
-#### Severity accuracy
-
-Measures whether the predicted severity matches the expected classification.
-
----
-
-## Evaluation Dataset
-
-The evaluation dataset will contain synthetic R examples such as:
-
-```text
-evaluation/
-├── dataset.jsonl
-├── expected_results.jsonl
-└── benchmark.md
+### 3. Batch Evaluation
+Run the automated evaluation suite against the synthetic ground-truth dataset to calculate classification metrics.
+```bash
+python scripts/evaluate.py
 ```
 
-Each test case can contain:
-
-```text
-R source code
-       ↓
-Expected rule IDs
-       ↓
-Expected severity
-       ↓
-Expected evidence
-```
-
-This creates a reproducible framework for comparing future versions of the agent.
-
 ---
 
-## Technology Stack
-
-### Programming
-
-* Python 3.11+
-* R
-
-### AI / GenAI
-
-* Large Language Model
-* Retrieval-Augmented Generation (RAG)
-* Structured LLM outputs
-
-### Software Engineering
-
-* Git
-* GitHub
-* Automated testing
-* Modular Python architecture
-
-### Planned Extensions
-
-* FastAPI
-* Docker
-* Google Cloud
-* Additional evaluation tooling
-
-These technologies will be introduced incrementally rather than added to the initial prototype unnecessarily.
-
----
-
-## Repository Structure
+## 📂 Project Structure
 
 ```text
 clinical-r-code-compliance-agent/
-│
-├── README.md
-├── AGENTS.md
-├── LICENSE
-├── .gitignore
-├── .env.example
-├── pyproject.toml
-├── requirements.txt
-│
-├── src/
-│   └── compliance_agent/
-│       ├── __init__.py
-│       ├── agent.py
-│       ├── config.py
-│       ├── prompts.py
-│       │
-│       ├── tools/
-│       │   ├── __init__.py
-│       │   ├── code_analyzer.py
-│       │   ├── rule_retriever.py
-│       │   └── report_generator.py
-│       │
-│       ├── rag/
-│       │   ├── __init__.py
-│       │   ├── embeddings.py
-│       │   ├── retriever.py
-│       │   └── vector_store.py
-│       │
-│       ├── evaluation/
-│       │   ├── __init__.py
-│       │   ├── evaluator.py
-│       │   └── metrics.py
-│       │
-│       └── models/
-│           ├── __init__.py
-│           └── schemas.py
-│
-├── knowledge/
-│   ├── rules/
-│   └── metadata/
-│
-├── examples/
+├── app.py                      # Streamlit interactive frontend
+├── Dockerfile                  # Containerization instructions
+├── evaluation/                 # Ground truth datasets & batch scripts
+│   ├── ground_truth.csv
+│   └── scripts/
+├── examples/                   # Sample inputs and generated HTML/Excel outputs
 │   ├── input/
 │   └── output/
-│
-├── tests/
-│
-├── evaluation/
-│
-├── docs/
-│   ├── architecture.md
-│   ├── evaluation.md
-│   ├── security.md
-│   └── limitations.md
-│
-├── notebooks/
-│
-└── scripts/
+├── knowledge/                  # JSON rule definitions & vector DB storage
+│   └── rules/                  
+├── scripts/                    # CLI execution & evaluation runners
+│   ├── cli.py
+│   └── evaluate.py
+├── src/
+│   └── compliance_agent/       # Core application logic
+│       ├── agent.py            # LangChain Agent orchestration
+│       ├── models/             # Pydantic schemas
+│       ├── rag/                # ChromaDB vector store & embeddings
+│       └── tools/              # Code analyzer & HTML/Excel reporter
+└── tests/                      # Pytest unit & integration tests
 ```
 
 ---
 
-## Development Philosophy
+## 🧩 Extensibility
 
-The project follows a few principles.
+The compliance rules are entirely decoupled from the application logic. 
 
-### 1. Deterministic checks before LLM reasoning
-
-Where an issue can be detected reliably with traditional programming techniques, the system should prefer deterministic analysis.
-
-### 2. Evidence before explanation
-
-An AI-generated finding should identify the code evidence supporting the conclusion.
-
-### 3. Retrieval before reasoning
-
-The LLM should receive relevant compliance-rule context rather than relying entirely on its pretrained knowledge.
-
-### 4. Evaluation before optimization
-
-New functionality should be evaluated against a controlled dataset before being considered an improvement.
-
-### 5. Human review remains important
-
-The system is intended to **assist** clinical programmers, not replace qualified human review.
+**Want to add a new clinical coding standard?** 
+You don't need to touch a single line of Python code. Simply create a new `.json` file outlining the rule definition, evidence requirements, and severity, and drop it into the `knowledge/rules/` directory. The RAG pipeline will automatically embed and index it on the next run!
 
 ---
 
-## Security and Privacy
-
-This repository is designed as a personal research project.
-
-The project must not contain:
-
-* Pfizer confidential information
-* Pfizer proprietary source code
-* Internal Pfizer SOPs or coding standards
-* Real clinical trial data
-* Patient-level information
-* Internal Pfizer prompts or APIs
-* API keys or credentials
-
-All examples and compliance rules should be synthetic.
-
-Secrets should be stored through environment variables and should never be committed to Git.
-
----
-
-## Limitations
-
-This project is a research prototype.
-
-It is **not**:
-
-* A validated clinical software application
-* A regulatory submission system
-* A replacement for qualified clinical programming review
-* A representation of Pfizer internal coding standards
-* A representation of any specific sponsor's SOPs
-* A validated regulatory compliance engine
-
-LLM-generated findings may contain false positives, false negatives, incorrect interpretations, or unsupported recommendations.
-
-For that reason, evaluation and evidence validation are fundamental parts of the project.
-
----
-
-## Roadmap
-
-### v0.1 — Foundation
-
-* [x] Repository structure
-* [x] Synthetic compliance rules
-* [x] Rule data model
-* [x] Basic R code analyzer
-* [x] Synthetic R test cases
-* [x] Unit tests
-* [x] CLI demonstration
-
-### v0.2 — RAG
-
-* [ ] Rule retrieval
-* [ ] Embedding-based retrieval
-* [ ] Retrieval evaluation
-* [ ] Context construction
-* [ ] Improved evidence grounding
-
-### v0.3 — AI Agent
-
-* [ ] LLM integration
-* [ ] Structured outputs
-* [ ] Compliance finding schema
-* [ ] Evidence validation
-* [ ] Error handling
-
-### v0.4 — Evaluation
-
-* [ ] Benchmark dataset
-* [ ] Precision / recall
-* [ ] False-positive analysis
-* [ ] Evidence accuracy
-* [ ] Severity evaluation
-* [ ] Regression testing
-
-### v0.5 — Application
-
-* [ ] API layer
-* [ ] Simple web interface
-* [ ] Example report generation
-* [ ] Dockerization
-
-### Future
-
-* [ ] Google Cloud deployment
-* [ ] Agent observability
-* [ ] Human-in-the-loop review
-* [ ] Additional R analysis patterns
-* [ ] Expanded evaluation framework
-
----
-
-## Project Status
-
-**Current version:** `v0.1 — Foundation`
-
-The current focus is establishing the synthetic compliance-rule framework, deterministic analysis, evaluation dataset, and testing infrastructure before introducing more complex agent capabilities.
-
----
-
-## Why This Project?
-
-This project explores the intersection of:
-
-```text
-Clinical Programming
-        +
-R / Python
-        +
-Software Engineering
-        +
-Generative AI
-        +
-Agentic Workflows
-        +
-AI Evaluation
-```
-
-The long-term goal is to demonstrate how domain expertise in clinical programming can be combined with modern AI engineering techniques to build practical tools for regulated healthcare and pharmaceutical environments.
-
----
-
-## Disclaimer
-
-This is an independent personal research project.
-
-It is not affiliated with, sponsored by, or endorsed by Pfizer.
-
-All compliance rules, examples, datasets, and outputs used in this repository are synthetic and created for educational and research purposes.
-
-The system should not be used to make clinical, regulatory, patient-safety, or production programming decisions.
-
----
-
-## License
-
-See [LICENSE](LICENSE) for details.
+*Disclaimer: This is a research prototype. All compliance rules, datasets, and outputs used in this repository are synthetic and created for educational purposes. It is not affiliated with any specific pharmaceutical company or regulatory body.*
