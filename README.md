@@ -32,7 +32,7 @@ To run the agent locally, you need Python 3.11+ and [Ollama](https://ollama.com/
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/yourusername/clinical-r-code-compliance-agent.git
+git clone https://github.com/AI-FOB/clinical-r-code-compliance-agent.git
 cd clinical-r-code-compliance-agent
 ```
 
