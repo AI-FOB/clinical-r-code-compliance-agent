@@ -21,6 +21,14 @@ The agent will automatically flag violations, suggest fixes using an AI model, a
 uploaded_file = st.file_uploader("Upload an R script (.R)", type=["R", "r"])
 
 if uploaded_file is not None:
+    # Clear session state if file changes
+    if "last_uploaded_file" not in st.session_state or st.session_state.last_uploaded_file != uploaded_file.name:
+        st.session_state.pop("findings", None)
+        st.session_state.pop("excel_path", None)
+        st.session_state.pop("html_path", None)
+        st.session_state.pop("updated_script_path", None)
+        st.session_state.last_uploaded_file = uploaded_file.name
+
     if st.button("Run Compliance Scan", type="primary"):
         with st.spinner("Analyzing code compliance..."):
             # Save uploaded file to a temporary location
@@ -68,64 +76,73 @@ if uploaded_file is not None:
                     output_dir=str(output_dir)
                 )
 
-                st.success(f"Analysis complete! Found {len(findings)} compliance issue(s).")
-
-                # Metrics Dashboard
-                st.subheader("Results Summary")
-                high_count = sum(1 for f in findings if f.severity == "HIGH")
-                medium_count = sum(1 for f in findings if f.severity == "MEDIUM")
-                low_count = sum(1 for f in findings if f.severity == "LOW")
-
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Total Issues", len(findings))
-                col2.metric("High Severity", high_count)
-                col3.metric("Medium Severity", medium_count)
-                col4.metric("Low Severity", low_count)
-
-                # Detailed Findings
-                st.subheader("Detailed Findings & Code Diffs")
-                for issue in findings:
-                    with st.expander(f"[{issue.severity}] {issue.rule_id} (Line {issue.line_number})"):
-                        st.markdown(f"**Finding:** {issue.finding}")
-                        st.markdown(f"**Recommendation:** {issue.recommendation}")
-                        
-                        st.markdown("**Original Code (Evidence):**")
-                        # Show original code
-                        st.code(issue.evidence, language="r")
-                        
-                        if issue.suggested_fix:
-                            st.markdown("**Suggested Fix:**")
-                            st.code(issue.suggested_fix, language="r")
-
-                # Download Buttons
-                st.subheader("Download Reports & Updated Code")
-                dl_col1, dl_col2, dl_col3 = st.columns(3)
+                st.session_state.findings = findings
+                st.session_state.excel_path = excel_path
+                st.session_state.html_path = html_path
+                st.session_state.updated_script_path = updated_script_path
                 
-                with open(updated_script_path, "rb") as f:
-                    dl_col1.download_button(
-                        label="Download Updated .R Script",
-                        data=f,
-                        file_name=f"{uploaded_file.name.replace('.R', '')}_updated.R",
-                        mime="text/plain",
-                        type="primary"
-                    )
-                
-                with open(excel_path, "rb") as f:
-                    dl_col2.download_button(
-                        label="Download Excel Report",
-                        data=f,
-                        file_name=f"{uploaded_file.name.replace('.R', '')}_compliance_report.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                
-                with open(html_path, "rb") as f:
-                    dl_col3.download_button(
-                        label="Download HTML Report",
-                        data=f,
-                        file_name=f"{uploaded_file.name.replace('.R', '')}_compliance_report.html",
-                        mime="text/html"
-                    )
-
             finally:
                 # Clean up the original uploaded temp file
                 os.unlink(tmp_file_path)
+
+    # Display results if available in session state
+    if "findings" in st.session_state:
+        findings = st.session_state.findings
+        
+        st.success(f"Analysis complete! Found {len(findings)} compliance issue(s).")
+
+        # Metrics Dashboard
+        st.subheader("Results Summary")
+        high_count = sum(1 for f in findings if f.severity == "HIGH")
+        medium_count = sum(1 for f in findings if f.severity == "MEDIUM")
+        low_count = sum(1 for f in findings if f.severity == "LOW")
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Issues", len(findings))
+        col2.metric("High Severity", high_count)
+        col3.metric("Medium Severity", medium_count)
+        col4.metric("Low Severity", low_count)
+
+        # Detailed Findings
+        st.subheader("Detailed Findings & Code Diffs")
+        for issue in findings:
+            with st.expander(f"[{issue.severity}] {issue.rule_id} (Line {issue.line_number})"):
+                st.markdown(f"**Finding:** {issue.finding}")
+                st.markdown(f"**Recommendation:** {issue.recommendation}")
+                
+                st.markdown("**Original Code (Evidence):**")
+                # Show original code
+                st.code(issue.evidence, language="r")
+                
+                if issue.suggested_fix:
+                    st.markdown("**Suggested Fix:**")
+                    st.code(issue.suggested_fix, language="r")
+
+        # Download Buttons
+        st.subheader("Download Reports & Updated Code")
+        dl_col1, dl_col2, dl_col3 = st.columns(3)
+        
+        with open(st.session_state.updated_script_path, "rb") as f:
+            dl_col1.download_button(
+                label="Download Updated .R Script",
+                data=f,
+                file_name=f"{uploaded_file.name.replace('.R', '')}_updated.R",
+                mime="text/plain",
+                type="primary"
+            )
+        
+        with open(st.session_state.excel_path, "rb") as f:
+            dl_col2.download_button(
+                label="Download Excel Report",
+                data=f,
+                file_name=f"{uploaded_file.name.replace('.R', '')}_compliance_report.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        
+        with open(st.session_state.html_path, "rb") as f:
+            dl_col3.download_button(
+                label="Download HTML Report",
+                data=f,
+                file_name=f"{uploaded_file.name.replace('.R', '')}_compliance_report.html",
+                mime="text/html"
+            )
