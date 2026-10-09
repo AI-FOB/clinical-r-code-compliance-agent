@@ -1,0 +1,11 @@
+{
+    "metrics": {
+        "TP": 10,
+        "FP": 0,
+        "FN": 0,
+        "Precision": 1.0,
+        "Recall": 1.0
+    },
+    "false_positives": [],
+    "false_negatives": []
+}

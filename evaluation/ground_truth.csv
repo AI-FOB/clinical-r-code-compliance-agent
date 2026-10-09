@@ -1,0 +1,11 @@
+file_name,line_number,rule_id
+adam_adsl.R,1,COMP-004
+adam_adsl.R,7,COMP-003
+adam_adsl.R,9,COMP-005
+adam_adsl.R,10,COMP-001
+adam_adsl.R,10,COMP-005
+adam_adsl.R,11,COMP-006
+sdtm_ae.R,10,COMP-002
+sdtm_ae.R,13,COMP-006
+sdtm_vs.R,9,COMP-005
+sdtm_vs.R,10,COMP-001
