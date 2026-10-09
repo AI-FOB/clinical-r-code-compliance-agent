@@ -64,7 +64,7 @@ if uploaded_file is not None:
                 
                 excel_path, html_path, updated_script_path = generate_reports(
                     findings=findings,
-                    original_file_path=tmp_file_path,
+                    file_name=tmp_file_path,
                     output_dir=str(output_dir)
                 )
 
