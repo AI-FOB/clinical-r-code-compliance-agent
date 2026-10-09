@@ -31,10 +31,11 @@ if uploaded_file is not None:
 
     if st.button("Run Compliance Scan", type="primary"):
         with st.spinner("Analyzing code compliance..."):
-            # Save uploaded file to a temporary location
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".R") as tmp_file:
-                tmp_file.write(uploaded_file.getvalue())
-                tmp_file_path = tmp_file.name
+            # Save uploaded file to a temporary directory with its original name
+            tmp_dir = tempfile.mkdtemp()
+            tmp_file_path = os.path.join(tmp_dir, uploaded_file.name)
+            with open(tmp_file_path, "wb") as f:
+                f.write(uploaded_file.getvalue())
 
             try:
                 if use_llm:
@@ -73,7 +74,11 @@ if uploaded_file is not None:
                 excel_path, html_path, updated_script_path = generate_reports(
                     findings=findings,
                     file_name=tmp_file_path,
-                    output_dir=str(output_dir)
+                    output_dir=str(output_dir),
+                    run_metadata={
+                        "mode": "LLM Agent" if use_llm else "Deterministic",
+                        "model": "gemma4:e4b (T=1.0)" if use_llm else "N/A"
+                    }
                 )
 
                 st.session_state.findings = findings
@@ -83,7 +88,11 @@ if uploaded_file is not None:
                 
             finally:
                 # Clean up the original uploaded temp file
-                os.unlink(tmp_file_path)
+                try:
+                    os.unlink(tmp_file_path)
+                    os.rmdir(tmp_dir)
+                except OSError:
+                    pass
 
     # Display results if available in session state
     if "findings" in st.session_state:
