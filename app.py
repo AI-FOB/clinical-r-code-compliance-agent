@@ -29,17 +29,34 @@ if uploaded_file is not None:
                 tmp_file_path = tmp_file.name
 
             try:
-                # Initialize the agent
-                agent = ComplianceAgent(
-                    model_name="gemma4:e4b",
-                    temperature=1.0,
-                    top_k=3,
-                    max_concurrency=max_concurrency,
-                    use_llm=use_llm
-                )
+                if use_llm:
+                    # Initialize the agent
+                    agent = ComplianceAgent(
+                        model="gemma4:e4b",
+                        temperature=1.0,
+                        top_k=3,
+                        max_concurrency=max_concurrency
+                    )
 
-                # Run the asynchronous analysis
-                findings = asyncio.run(agent.aanalyze(tmp_file_path))
+                    # Run the asynchronous analysis
+                    findings = asyncio.run(agent.aanalyze(tmp_file_path))
+                else:
+                    from src.compliance_agent.tools.code_analyzer import BasicRCodeAnalyzer
+                    from src.compliance_agent.models.schemas import ComplianceFinding
+                    analyzer = BasicRCodeAnalyzer()
+                    raw_findings = analyzer.analyze_file(tmp_file_path)
+                    findings = []
+                    for raw in raw_findings:
+                        findings.append(ComplianceFinding(
+                            rule_id=raw["rule_id"],
+                            line_number=raw["line_number"],
+                            severity=raw["severity"],
+                            finding=f"Deterministic match for {raw['rule_name']}",
+                            evidence=raw["line_content"],
+                            recommendation=raw["recommendation"],
+                            confidence=1.0,
+                            suggested_fix=""
+                        ))
 
                 # Generate reports
                 output_dir = Path(tempfile.gettempdir()) / "compliance_reports"
